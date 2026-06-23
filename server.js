@@ -1,30 +1,61 @@
 const express = require("express");
+const axios = require("axios");
 const cors = require("cors");
+require("dotenv").config();
 
 const app = express();
-const PORT = process.env.PORT || 3000;
-
-// Middleware
 app.use(cors());
 app.use(express.json());
 
-// Test route (check if server is alive)
+const PAYSTACK_SECRET = process.env.PAYSTACK_SECRET_KEY;
+const BASE_URL = process.env.BASE_URL;
+
+// Health check
 app.get("/", (req, res) => {
-    res.send("✅ PSKM KINGDOM INSTITUTE API IS RUNNING");
+    res.send("PSKM Paystack API is running");
 });
 
-// Simple API test route (for future apps/payments)
-app.post("/api/test", (req, res) => {
-    console.log("📩 Request received:", req.body);
+// Create Paystack payment
+app.post("/api/paystack/pay", async (req, res) => {
+    try {
+        const { email, amount, items } = req.body;
 
-    res.json({
-        status: "success",
-        message: "Data received successfully",
-        data: req.body
-    });
+        const response = await axios.post(
+            "https://api.paystack.co/transaction/initialize",
+            {
+                email,
+                amount: amount * 100, // Paystack uses kobo
+                callback_url: `${BASE_URL}/success`
+            },
+            {
+                headers: {
+                    Authorization: `Bearer ${PAYSTACK_SECRET}`,
+                    "Content-Type": "application/json"
+                }
+            }
+        );
+
+        res.json({
+            success: true,
+            authorization_url: response.data.data.authorization_url,
+            reference: response.data.data.reference
+        });
+
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: error.message
+        });
+    }
 });
 
-// Start server
-app.listen(PORT, () => {
-    console.log(`🚀 Server running on port ${PORT}`);
+// Success page handler
+app.get("/success", (req, res) => {
+    res.send(`
+        <h1>Payment Successful</h1>
+        <p>Your PSKM order has been received.</p>
+    `);
 });
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log("PSKM Paystack API running"));
