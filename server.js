@@ -1,61 +1,63 @@
 const express = require("express");
-const axios = require("axios");
 const cors = require("cors");
-require("dotenv").config();
+const axios = require("axios");
 
 const app = express();
+
 app.use(cors());
 app.use(express.json());
 
-const PAYSTACK_SECRET = process.env.PAYSTACK_SECRET_KEY;
-const BASE_URL = process.env.BASE_URL;
-
-// Health check
+// TEST ROUTE (CHECK IF SERVER WORKS)
 app.get("/", (req, res) => {
-    res.send("PSKM Paystack API is running");
+    res.send("PSKM Paystack API is LIVE");
 });
 
-// Create Paystack payment
+// PAYSTACK ROUTE (THIS IS WHAT YOU ARE MISSING)
 app.post("/api/paystack/pay", async (req, res) => {
     try {
-        const { email, amount, items } = req.body;
+        const { email, amount, cart } = req.body;
+
+        if (!amount) {
+            return res.status(400).json({
+                status: false,
+                message: "Amount missing"
+            });
+        }
 
         const response = await axios.post(
             "https://api.paystack.co/transaction/initialize",
             {
-                email,
-                amount: amount * 100, // Paystack uses kobo
-                callback_url: `${BASE_URL}/success`
+                email: email || "customer@pskm.store",
+                amount: Math.round(amount * 100),
+                currency: "ZAR",
+                callback_url: "https://pskm-kingdom-store.onrender.com/success.html",
+                metadata: {
+                    cart: cart || []
+                }
             },
             {
                 headers: {
-                    Authorization: `Bearer ${PAYSTACK_SECRET}`,
+                    Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`,
                     "Content-Type": "application/json"
                 }
             }
         );
 
-        res.json({
-            success: true,
+        return res.json({
+            status: true,
             authorization_url: response.data.data.authorization_url,
             reference: response.data.data.reference
         });
 
-    } catch (error) {
-        res.status(500).json({
-            success: false,
-            message: error.message
+    } catch (err) {
+        return res.status(500).json({
+            status: false,
+            message: err.message
         });
     }
 });
 
-// Success page handler
-app.get("/success", (req, res) => {
-    res.send(`
-        <h1>Payment Successful</h1>
-        <p>Your PSKM order has been received.</p>
-    `);
-});
-
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log("PSKM Paystack API running"));
+app.listen(PORT, () => {
+    console.log("PSKM server running on port " + PORT);
+});
