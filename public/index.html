@@ -1,0 +1,238 @@
+<!DOCTYPE html><html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PSKM Store</title><style>
+*{margin:0;padding:0;box-sizing:border-box}
+
+body{
+font-family:Arial,sans-serif;
+background:#081420;
+color:white;
+}
+
+.hero{
+background:linear-gradient(135deg,#0d2d52,#081420);
+padding:60px 20px;
+text-align:center;
+}
+
+.hero h1{
+font-size:40px;
+color:#FFD700;
+}
+
+.hero p{
+margin-top:10px;
+font-size:18px;
+}
+
+.products{
+display:grid;
+grid-template-columns:repeat(auto-fit,minmax(250px,1fr));
+gap:20px;
+padding:20px;
+max-width:1200px;
+margin:auto;
+}
+
+.card{
+background:#10243d;
+border-radius:12px;
+padding:20px;
+box-shadow:0 4px 12px rgba(0,0,0,.4);
+}
+
+.card h3{
+color:#FFD700;
+margin-bottom:10px;
+}
+
+.price{
+font-size:22px;
+font-weight:bold;
+margin:10px 0;
+}
+
+button{
+background:#FFD700;
+border:none;
+padding:12px;
+width:100%;
+font-weight:bold;
+cursor:pointer;
+border-radius:6px;
+}
+
+.cart{
+position:fixed;
+right:0;
+top:0;
+width:320px;
+height:100%;
+background:#0d1b2a;
+overflow:auto;
+padding:20px;
+box-shadow:-5px 0 15px rgba(0,0,0,.5);
+}
+
+.cart h2{
+color:#FFD700;
+margin-bottom:20px;
+}
+
+.cart-item{
+background:#17324d;
+padding:10px;
+margin-bottom:10px;
+border-radius:8px;
+}
+
+.total{
+font-size:22px;
+margin-top:15px;
+font-weight:bold;
+}
+
+.checkout{
+margin-top:15px;
+background:#28a745;
+color:white;
+}
+
+footer{
+text-align:center;
+padding:20px;
+margin-top:40px;
+}
+</style></head><body><section class="hero">
+<h1>PSKM STORE</h1>
+<p>Kingdom Resources For Spiritual Growth</p>
+<p>Books • Courses • Ministry Resources • Digital Products</p>
+</section><section class="products"><div class="card">
+<h3>What Happened Before Adam</h3>
+<div class="price">R80</div>
+<button onclick="addToCart('What Happened Before Adam',80)">Add To Cart</button>
+</div><div class="card">
+<h3>How Did I Reach Here</h3>
+<div class="price">R55</div>
+<button onclick="addToCart('How Did I Reach Here',55)">Add To Cart</button>
+</div><div class="card">
+<h3>What Happened On The Cross</h3>
+<div class="price">R120</div>
+<button onclick="addToCart('What Happened On The Cross',120)">Add To Cart</button>
+</div><div class="card">
+<h3>Prophetic Code Of A Seer</h3>
+<div class="price">R100</div>
+<button onclick="addToCart('Prophetic Code Of A Seer',100)">Add To Cart</button>
+</div><div class="card">
+<h3>Christology Study</h3>
+<div class="price">R100</div>
+<button onclick="addToCart('Christology Study',100)">Add To Cart</button>
+</div><div class="card">
+<h3>Masterclass Package</h3>
+<div class="price">R1200</div>
+<button onclick="addToCart('Masterclass Package',1200)">Add To Cart</button>
+</div><div class="card">
+<h3>Partnership Renewal</h3>
+<div class="price">R150</div>
+<button onclick="addToCart('Partnership Renewal',150)">Add To Cart</button>
+</div><div class="card">
+<h3>PSKM Kingdom T-Shirt</h3>
+<div class="price">R350</div>
+<button onclick="addToCart('PSKM Kingdom T-Shirt',350)">Add To Cart</button>
+</div></section><div class="cart">
+<h2>Shopping Cart</h2><div id="cartItems"></div><div class="total">
+Total: R<span id="total">0</span>
+</div><button class="checkout" onclick="checkout()">
+Checkout With Paystack
+</button>
+</div><footer>
+© PSKM Store | Pastor Stephen Khoza's Ministry
+</footer><script>
+
+let cart=[];
+
+function addToCart(name,price){
+
+const item=cart.find(x=>x.name===name);
+
+if(item){
+item.qty++;
+}else{
+cart.push({
+name:name,
+price:price,
+qty:1
+});
+}
+
+renderCart();
+}
+
+function renderCart(){
+
+let html="";
+let total=0;
+
+cart.forEach(item=>{
+
+total+=item.price*item.qty;
+
+html+=`
+<div class="cart-item">
+<b>${item.name}</b><br>
+R${item.price} × ${item.qty}
+</div>
+`;
+
+});
+
+document.getElementById("cartItems").innerHTML=html;
+document.getElementById("total").innerText=total;
+}
+
+async function checkout(){
+
+const total=cart.reduce((sum,item)=>sum+(item.price*item.qty),0);
+
+if(total<=0){
+alert("Cart is empty");
+return;
+}
+
+try{
+
+const response=await fetch("/api/paystack/pay",{
+method:"POST",
+headers:{
+"Content-Type":"application/json"
+},
+body:JSON.stringify({
+email:"customer@pskm.store",
+amount:total,
+cart:cart
+})
+});
+
+const data=await response.json();
+
+if(data.status && data.authorization_url){
+
+window.location.href=data.authorization_url;
+
+}else{
+
+alert(data.message || "Payment failed");
+
+}
+
+}catch(err){
+
+alert("Checkout error");
+
+}
+
+}
+</script></body>
+        </html>
