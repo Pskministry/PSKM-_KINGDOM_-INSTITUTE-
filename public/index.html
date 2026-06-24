@@ -192,18 +192,16 @@ document.getElementById("cartItems").innerHTML=html;
 document.getElementById("total").innerText=total;
 }
 
-async function checkout(){
+function checkout(){
 
-const total=cart.reduce((sum,item)=>sum+(item.price*item.qty),0);
+let total = cart.reduce((s,i)=>s + i.price * i.qty, 0);
 
-if(total<=0){
-alert("Cart is empty");
+if(total <= 0){
+alert("Cart empty");
 return;
 }
 
-try{
-
-const response=await fetch("/api/paystack/pay",{
+fetch("https://pskm-kingdom-institute.onrender.com/api/paystack/pay",{
 method:"POST",
 headers:{
 "Content-Type":"application/json"
@@ -213,26 +211,19 @@ email:"customer@pskm.store",
 amount:total,
 cart:cart
 })
-});
-
-const data=await response.json();
-
-if(data.status && data.authorization_url){
-
-window.location.href=data.authorization_url;
-
+})
+.then(r=>r.json())
+.then(d=>{
+if(d.status && d.authorization_url){
+window.location.href = d.authorization_url;
 }else{
-
-alert(data.message || "Payment failed");
-
+alert(d.message || "Payment failed");
 }
-
-}catch(err){
-
-alert("Checkout error");
-
-}
-
-}
+})
+.catch(err=>{
+console.log(err);
+alert("Server error");
+});
+        }
 </script></body>
         </html>
