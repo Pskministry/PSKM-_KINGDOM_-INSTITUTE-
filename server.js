@@ -7,28 +7,42 @@ const app = express();
 
 app.use(cors());
 app.use(express.json());
-app.use(express.static(path.join(__dirname, "public")));
 
 /* =========================
-   HOME
+   SERVE FRONTEND (IMPORTANT)
 ========================= */
+app.use(express.static(path.join(__dirname, "public")));
+
+/* HOME PAGE */
 app.get("/", (req, res) => {
     res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
+/* SUCCESS PAGE */
+app.get("/success", (req, res) => {
+    res.sendFile(path.join(__dirname, "public", "success.html"));
+});
+
 /* =========================
-   INIT PAYSTACK PAYMENT
+   PAYSTACK CHECKOUT
 ========================= */
-app.post("/paystack/initiate", async (req, res) => {
+app.get("/api/paystack/pay", (req, res) => {
+  res.json({
+    status: true,
+    message: "Paystack route exists. Use POST to initialize payment."
+  });
+});
+app.post("/api/paystack/pay", async (req, res) => {
     try {
+
         const { email, amount, cart } = req.body;
 
         const response = await axios.post(
             "https://api.paystack.co/transaction/initialize",
             {
                 email: email || "customer@pskm.store",
-                amount: Math.round(amount),
-                callback_url: `${process.env.BASE_URL}/success`,
+                amount: Math.round(amount * 100),
+                callback_url: "https://pskm-kingdom-institute.onrender.com/success",
                 metadata: { cart: cart || [] }
             },
             {
@@ -39,80 +53,38 @@ app.post("/paystack/initiate", async (req, res) => {
             }
         );
 
-        return res.json({
+        res.json({
             status: true,
-            data: response.data.data
+            authorization_url: response.data.data.authorization_url,
+            reference: response.data.data.reference
         });
 
     } catch (err) {
-        return res.status(500).json({
+        console.log(err.response?.data || err.message);
+
+        res.status(500).json({
             status: false,
             message: err.response?.data?.message || err.message
         });
     }
 });
-
-/* =========================
-   SUCCESS / VERIFY PAYMENT
-========================= */
-app.get("/success", async (req, res) => {
-    const reference = req.query.reference;
-
-    if (!reference) {
-        return res.send("<h1>No payment reference found</h1>");
-    }
-
-    try {
-        const verify = await axios.get(
-            `https://api.paystack.co/transaction/verify/${reference}`,
-            {
-                headers: {
-                    Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`
-                }
-            }
-        );
-
-        if (verify.data.data.status === "success") {
-            return res.send(`
-                <h1>✅ Payment Successful</h1>
-                <p>Reference: ${reference}</p>
-                <a href="/">Back to Store</a>
-            `);
-        }
-
-        return res.send("<h1>❌ Payment Failed</h1>");
-
-    } catch (err) {
-        return res.send("<h1>Error verifying payment</h1>");
-    }
+app.get("/test-paystack", async (req,res)=>{
+  res.json({
+    keyExists: !!process.env.PAYSTACK_SECRET_KEY
+  });
 });
-
 /* =========================
-   STATUS CHECK
+   STATUS ROUTE
 ========================= */
 app.get("/api/status", (req, res) => {
     res.json({
         status: true,
-        service: "PSKM STORE",
-        message: "Backend running"
+        service: "PSKM Store",
+        message: "Store API Online"
     });
 });
 
-/* =========================
-   TEST CONFIG
-========================= */
-app.get("/test-paystack", (req, res) => {
-    res.json({
-        keyExists: !!process.env.PAYSTACK_SECRET_KEY,
-        baseUrl: process.env.BASE_URL
-    });
-});
-
-/* =========================
-   START SERVER
-========================= */
 const PORT = process.env.PORT || 3000;
-
 app.listen(PORT, () => {
     console.log("PSKM Store running on port " + PORT);
 });
