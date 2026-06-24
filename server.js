@@ -26,6 +26,12 @@ app.get("/success", (req, res) => {
 /* =========================
    PAYSTACK CHECKOUT
 ========================= */
+app.get("/api/paystack/pay", (req, res) => {
+  res.json({
+    status: true,
+    message: "Paystack route exists. Use POST to initialize payment."
+  });
+});
 app.post("/api/paystack/pay", async (req, res) => {
     try {
 
