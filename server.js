@@ -24,8 +24,17 @@ app.post("/paystack/initiate", async (req, res) => {
         const { email, amount, cart } = req.body;
 
         const response = await axios.post(
-            "https://api.paystack.co/transaction/initialize",
-            {
+    "https://api.paystack.co/transaction/initialize",
+    {
+        email: email || "customer@pskm.store",
+        amount: Math.round(amount * 100),
+
+        callback_url: `${process.env.BASE_URL}/success`,
+
+        metadata: {
+            cart: cart || []
+        }
+    },
                 email: email || "customer@pskmstore.co.za",
                 amount: amount, // already in kobo from frontend
                 callback_url: `${process.env.BASE_URL}/success`,
