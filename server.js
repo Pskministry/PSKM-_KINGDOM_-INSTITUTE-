@@ -24,21 +24,12 @@ app.post("/paystack/initiate", async (req, res) => {
         const { email, amount, cart } = req.body;
 
         const response = await axios.post(
-    "https://api.paystack.co/transaction/initialize",
-    {
-        email: email || "customer@pskm.store",
-        amount: Math.round(amount * 100),
-
-        callback_url: `${process.env.BASE_URL}/success`,
-
-        metadata: {
-            cart: cart || []
-        }
-    },
-                email: email || "customer@pskmstore.co.za",
-                amount: amount, // already in kobo from frontend
+            "https://api.paystack.co/transaction/initialize",
+            {
+                email: email || "customer@pskm.store",
+                amount: Math.round(amount * 100),
                 callback_url: `${process.env.BASE_URL}/success`,
-                metadata: { cart }
+                metadata: { cart: cart || [] }
             },
             {
                 headers: {
@@ -64,7 +55,7 @@ app.post("/paystack/initiate", async (req, res) => {
 });
 
 /* =========================
-   VERIFY PAYMENT (SUCCESS PAGE)
+   SUCCESS / VERIFY PAGE
 ========================= */
 app.get("/success", async (req, res) => {
     const reference = req.query.reference;
@@ -112,13 +103,21 @@ app.get("/api/status", (req, res) => {
     });
 });
 
-const PORT = process.env.PORT || 3000;
+/* =========================
+   TEST PAYSTACK CONFIG
+========================= */
 app.get("/test-paystack", (req, res) => {
     res.json({
         keyExists: !!process.env.PAYSTACK_SECRET_KEY,
         baseUrl: process.env.BASE_URL
     });
 });
+
+/* =========================
+   START SERVER
+========================= */
+const PORT = process.env.PORT || 3000;
+
 app.listen(PORT, () => {
     console.log("PSKM Store running on port " + PORT);
 });
