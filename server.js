@@ -7,23 +7,17 @@ const app = express();
 
 app.use(cors());
 app.use(express.json());
-
-/* =========================
-   SERVE FRONTEND
-========================= */
 app.use(express.static(path.join(__dirname, "public")));
 
+/* =========================
+   HOME ROUTE
+========================= */
 app.get("/", (req, res) => {
     res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
-app.get("/success", (req, res) => {
-    res.sendFile(path.join(__dirname, "public", "success.html"));
-});
-
 /* =========================
-   PAYSTACK INIT (FIXED ROUTE)
-   🔥 IMPORTANT: matches frontend now
+   PAYSTACK INITIATE PAYMENT
 ========================= */
 app.post("/paystack/initiate", async (req, res) => {
     try {
@@ -32,10 +26,10 @@ app.post("/paystack/initiate", async (req, res) => {
         const response = await axios.post(
             "https://api.paystack.co/transaction/initialize",
             {
-                email: email || "customer@pskm.store",
-                amount: Math.round(Number(amount)),
-                callback_url: `${process.env.BASE_URL}/success`
-                metadata: { cart: cart || [] }
+                email: email || "customer@pskmstore.co.za",
+                amount: amount, // already in kobo from frontend
+                callback_url: `${process.env.BASE_URL}/success`,
+                metadata: { cart }
             },
             {
                 headers: {
@@ -61,12 +55,18 @@ app.post("/paystack/initiate", async (req, res) => {
 });
 
 /* =========================
-   VERIFY (OPTIONAL BUT CORRECT)
+   VERIFY PAYMENT (SUCCESS PAGE)
 ========================= */
-app.get("/paystack/verify/:reference", async (req, res) => {
+app.get("/success", async (req, res) => {
+    const reference = req.query.reference;
+
+    if (!reference) {
+        return res.send("<h1>No payment reference found</h1>");
+    }
+
     try {
-        const response = await axios.get(
-            `https://api.paystack.co/transaction/verify/${req.params.reference}`,
+        const verify = await axios.get(
+            `https://api.paystack.co/transaction/verify/${reference}`,
             {
                 headers: {
                     Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`
@@ -74,16 +74,21 @@ app.get("/paystack/verify/:reference", async (req, res) => {
             }
         );
 
-        res.json({
-            status: true,
-            data: response.data.data
-        });
+        const status = verify.data.data.status;
+
+        if (status === "success") {
+            return res.send(`
+                <h1>✅ Payment Successful</h1>
+                <p>Reference: ${reference}</p>
+                <a href="/">Back to Store</a>
+            `);
+        } else {
+            return res.send("<h1>❌ Payment Failed</h1>");
+        }
 
     } catch (err) {
-        res.status(500).json({
-            status: false,
-            message: err.response?.data?.message || err.message
-        });
+        console.log(err.message);
+        res.send("<h1>Error verifying payment</h1>");
     }
 });
 
@@ -93,20 +98,13 @@ app.get("/paystack/verify/:reference", async (req, res) => {
 app.get("/api/status", (req, res) => {
     res.json({
         status: true,
-        service: "PSKM Store",
-        message: "Store API Online"
+        service: "PSKM STORE",
+        message: "Backend running"
     });
 });
 
-/* DEBUG PAYSTACK KEY */
-app.get("/test-paystack", (req, res) => {
-    res.json({
-        keyExists: !!process.env.PAYSTACK_SECRET_KEY
-    });
-});
-
-/* START SERVER */
 const PORT = process.env.PORT || 3000;
+
 app.listen(PORT, () => {
     console.log("PSKM Store running on port " + PORT);
 });
