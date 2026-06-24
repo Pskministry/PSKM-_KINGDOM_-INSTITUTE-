@@ -62,7 +62,11 @@ app.post("/api/paystack/pay", async (req, res) => {
         });
     }
 });
-
+app.get("/test-paystack", async (req,res)=>{
+  res.json({
+    keyExists: !!process.env.PAYSTACK_SECRET_KEY
+  });
+});
 /* =========================
    STATUS ROUTE
 ========================= */
