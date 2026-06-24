@@ -10,14 +10,14 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
 
 /* =========================
-   HOME ROUTE
+   HOME
 ========================= */
 app.get("/", (req, res) => {
     res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
 /* =========================
-   PAYSTACK INITIATE PAYMENT
+   INIT PAYSTACK PAYMENT
 ========================= */
 app.post("/paystack/initiate", async (req, res) => {
     try {
@@ -27,7 +27,7 @@ app.post("/paystack/initiate", async (req, res) => {
             "https://api.paystack.co/transaction/initialize",
             {
                 email: email || "customer@pskm.store",
-                amount: Math.round(amount * 100),
+                amount: Math.round(amount), 
                 callback_url: `${process.env.BASE_URL}/success`,
                 metadata: { cart: cart || [] }
             },
@@ -39,7 +39,7 @@ app.post("/paystack/initiate", async (req, res) => {
             }
         );
 
-        res.json({
+        return res.json({
             status: true,
             data: response.data.data
         });
@@ -47,7 +47,7 @@ app.post("/paystack/initiate", async (req, res) => {
     } catch (err) {
         console.log(err.response?.data || err.message);
 
-        res.status(500).json({
+        return res.status(500).json({
             status: false,
             message: err.response?.data?.message || err.message
         });
@@ -55,7 +55,7 @@ app.post("/paystack/initiate", async (req, res) => {
 });
 
 /* =========================
-   SUCCESS / VERIFY PAGE
+   VERIFY PAYMENT PAGE
 ========================= */
 app.get("/success", async (req, res) => {
     const reference = req.query.reference;
@@ -82,13 +82,13 @@ app.get("/success", async (req, res) => {
                 <p>Reference: ${reference}</p>
                 <a href="/">Back to Store</a>
             `);
-        } else {
-            return res.send("<h1>❌ Payment Failed</h1>");
         }
+
+        return res.send("<h1>❌ Payment Failed</h1>");
 
     } catch (err) {
         console.log(err.message);
-        res.send("<h1>Error verifying payment</h1>");
+        return res.send("<h1>Error verifying payment</h1>");
     }
 });
 
@@ -117,7 +117,6 @@ app.get("/test-paystack", (req, res) => {
    START SERVER
 ========================= */
 const PORT = process.env.PORT || 3000;
-
 app.listen(PORT, () => {
     console.log("PSKM Store running on port " + PORT);
 });
