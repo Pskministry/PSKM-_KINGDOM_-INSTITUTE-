@@ -34,7 +34,7 @@ app.post("/paystack/initiate", async (req, res) => {
             {
                 email: email || "customer@pskm.store",
                 amount: Math.round(Number(amount)),
-                callback_url: "https://pskm-kingdom-institute.onrender.com/success",
+                callback_url: `${process.env.BASE_URL}/success`
                 metadata: { cart: cart || [] }
             },
             {
