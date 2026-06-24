@@ -27,7 +27,7 @@ app.post("/paystack/initiate", async (req, res) => {
             "https://api.paystack.co/transaction/initialize",
             {
                 email: email || "customer@pskm.store",
-                amount: Math.round(amount), 
+                amount: Math.round(amount),
                 callback_url: `${process.env.BASE_URL}/success`,
                 metadata: { cart: cart || [] }
             },
@@ -45,8 +45,6 @@ app.post("/paystack/initiate", async (req, res) => {
         });
 
     } catch (err) {
-        console.log(err.response?.data || err.message);
-
         return res.status(500).json({
             status: false,
             message: err.response?.data?.message || err.message
@@ -55,7 +53,7 @@ app.post("/paystack/initiate", async (req, res) => {
 });
 
 /* =========================
-   VERIFY PAYMENT PAGE
+   SUCCESS / VERIFY PAYMENT
 ========================= */
 app.get("/success", async (req, res) => {
     const reference = req.query.reference;
@@ -74,9 +72,7 @@ app.get("/success", async (req, res) => {
             }
         );
 
-        const status = verify.data.data.status;
-
-        if (status === "success") {
+        if (verify.data.data.status === "success") {
             return res.send(`
                 <h1>✅ Payment Successful</h1>
                 <p>Reference: ${reference}</p>
@@ -87,7 +83,6 @@ app.get("/success", async (req, res) => {
         return res.send("<h1>❌ Payment Failed</h1>");
 
     } catch (err) {
-        console.log(err.message);
         return res.send("<h1>Error verifying payment</h1>");
     }
 });
@@ -104,7 +99,7 @@ app.get("/api/status", (req, res) => {
 });
 
 /* =========================
-   TEST PAYSTACK CONFIG
+   TEST CONFIG
 ========================= */
 app.get("/test-paystack", (req, res) => {
     res.json({
@@ -117,6 +112,7 @@ app.get("/test-paystack", (req, res) => {
    START SERVER
 ========================= */
 const PORT = process.env.PORT || 3000;
+
 app.listen(PORT, () => {
     console.log("PSKM Store running on port " + PORT);
 });
