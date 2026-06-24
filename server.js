@@ -104,7 +104,12 @@ app.get("/api/status", (req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
-
+app.get("/test-paystack", (req, res) => {
+    res.json({
+        keyExists: !!process.env.PAYSTACK_SECRET_KEY,
+        baseUrl: process.env.BASE_URL
+    });
+});
 app.listen(PORT, () => {
     console.log("PSKM Store running on port " + PORT);
 });
