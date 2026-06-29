@@ -48,6 +48,28 @@ app.get("/", (req, res) => {
 /* =========================
    PAYSTACK INIT
 ========================= */
+app.post("/api/order/save", async (req, res) => {
+    try {
+        const order = {
+            ...req.body,
+            createdAt: new Date()
+        };
+
+        const result = await orders.insertOne(order);
+
+        res.json({
+            success: true,
+            id: result.insertedId,
+            message: "Order saved successfully"
+        });
+
+    } catch (err) {
+        res.status(500).json({
+            success: false,
+            message: err.message
+        });
+    }
+});
 app.post("/api/paystack/pay", async (req, res) => {
     try {
         const { email, amount, cart } = req.body;
