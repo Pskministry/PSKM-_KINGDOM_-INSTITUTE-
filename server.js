@@ -1,4 +1,30 @@
 require("dotenv").config();
+
+const { MongoClient } = require("mongodb");
+
+const client = new MongoClient(process.env.MONGODB_URI);
+
+let orders;
+
+async function connectDB() {
+    try {
+        await client.connect();
+        console.log("✅ MongoDB Connected");
+
+        const db = client.db("pskm");
+        orders = db.collection("orders");
+    } catch (err) {
+        console.error("MongoDB Error:", err);
+    }
+}
+
+connectDB();
+
+const express = require("express");
+const cors = require("cors");
+const path = require("path");
+const axios = require("axios");
+require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const path = require("path");
